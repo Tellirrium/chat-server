@@ -2,7 +2,7 @@
 // eslint-disable-next-line import/no-extraneous-dependencies
 const Websocket = require('ws');
 
-const server = new Websocket.Server({ port: 3000 });
+const server = new Websocket.Server({ port: 4000 });
 const arrayOfClients = [];
 
 server.on('connection', (socket) => {
