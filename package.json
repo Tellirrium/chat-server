@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "start": "node ./src/index.js",
     "lint": "eslint **/*.js --fix --ignore-pattern node_modules/",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -16,5 +17,13 @@
     "eslint-plugin-jsx-a11y": "^6.2.1",
     "eslint-plugin-react": "^7.13.0",
     "ws": "^7.0.0"
+  },
+  "dependencies": {
+    "body-parser": "^1.19.0",
+    "cors": "^2.8.5",
+    "express": "^4.17.1",
+    "http": "0.0.0",
+    "jsonwebtoken": "^8.5.1",
+    "socket.io": "^2.2.0"
   }
 }
