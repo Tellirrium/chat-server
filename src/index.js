@@ -26,22 +26,35 @@ io.sockets.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     connections.splice(connections.indexOf(socket), 1);
+    // users.splice(us.indexOf(socket), 1);
+    users.length = 0;
     console.log('client disconnected');
   });
 
   socket.on('message', (data) => {
     const time = (new Date()).toLocaleTimeString();
+    console.log(data);
 
-    connections.forEach((client) => {
-      client.json.send({
-        event: 'message', text: data, time, id: socket.id,
-      });
+    users.forEach((user) => {
+      if (user.name === data.name) {
+        connections.forEach((client) => {
+          client.json.send({
+            text: data.message, time, person: user,
+          });
+        });
+      }
     });
   });
 });
 
 app.post('/auth', (req, res) => {
   const token = jwt.decode(req.body.data);
+  const user = {
+    name: token.name,
+    src: token.picture,
+  };
+  users.push(user);
+  console.log(user);
   res.send(token);
 });
 
