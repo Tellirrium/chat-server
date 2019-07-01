@@ -1,7 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
-const jwt = require('jsonwebtoken');
+// const jwt = require('jsonwebtoken');
+let counter = 0;
 
 const port = 4000;
 
@@ -13,21 +14,19 @@ app.use(bodyParser.json());
 
 const server = require('http').createServer(app);
 const io = require('socket.io').listen(server);
+const { User, Message } = require('./sequelize');
+
 
 server.listen(port, () => console.log(`Server listen port ${port}`));
 
-const users = [];
 const connections = [];
 
 io.sockets.on('connection', (socket) => {
   connections.push(socket);
   console.log('client connected');
-  // console.log(socket.id);
 
   socket.on('disconnect', () => {
     connections.splice(connections.indexOf(socket), 1);
-    // users.splice(us.indexOf(socket), 1);
-    users.length = 0;
     console.log('client disconnected');
   });
 
@@ -35,61 +34,87 @@ io.sockets.on('connection', (socket) => {
     const time = (new Date()).toLocaleTimeString();
     console.log(data);
 
-    users.forEach((user) => {
-      if (user.name === data.name) {
-        connections.forEach((client) => {
-          client.json.send({
-            text: data.message, time, person: user,
-          });
+    // eslint-disable-next-line no-unused-vars
+    User.findOne({ where: { name: `${data.name}` } }).then((user) => {
+      Message.create({
+        text: data.message,
+        userId: user.id,
+      });
+
+      const userInfo = {
+        name: user.name,
+        src: user.picture,
+      };
+
+      connections.forEach((client) => {
+        client.json.send({
+          text: data.message, time, person: userInfo,
         });
-      }
+      });
     });
   });
 });
 
 app.post('/auth', (req, res) => {
-  const token = jwt.decode(req.body.data);
   const user = {
-    name: token.name,
-    src: token.picture,
+    name: req.body.data.name,
+    src: req.body.data.imageUrl,
   };
-  users.push(user);
+
+  const userForBd = {
+    email: req.body.data.email,
+    name: req.body.data.name,
+    picture: req.body.data.imageUrl,
+    password: 'none',
+  };
+
+  console.log(userForBd);
   console.log(user);
-  res.send(token);
+
+  User.create(userForBd);
+  res.send(user);
 });
 
-// const server = require('socket.io').listen(4000);
+app.post('/searchUser', (req, res) => {
+  User.findOne({ where: { email: `${req.body.userInfo.email}` } }).then((user) => {
+    if (user) {
+      if (user.password === req.body.userInfo.password) {
+        res.send({
+          name: user.name,
+          src: user.picture,
+        });
+      } else {
+        res.send({
+          message: 'Wrong password',
+        });
+      }
+    } else {
+      res.send({
+        message: 'error',
+      });
+      console.log('пользователь не найден');
+    }
+  });
+});
 
-// const clients = [];
-
-// // server.set('log level', 1);
-
-// server.sockets.on('connection', (socket) => {
-//   console.log('client connected');
-//   clients.push(socket);
-
-//   const ID = (socket.id).toString().substr(0, 5);
-
-//   // const time = (new Date).toLocaleTimeString();
-
-//   // // Посылаем клиенту сообщение о том, что он успешно подключился и его имя
-//   // socket.json.send({'event': 'connected', 'name': ID, 'time': time});
-//   // // Посылаем всем остальным пользователям, что подключился новый клиент и его имя
-//   // socket.broadcast.json.send({'event': 'userJoined', 'name': ID, 'time': time});
-
-//   socket.on('message', (data) => {
-//     const time = (new Date()).toLocaleTimeString();
-
-//     clients.forEach((client) => {
-//       client.json.send({
-//         event: 'messageReceived', name: ID, text: data, time,
-//       });
-//     });
-//   });
-
-//   socket.on('disconnect', () => {
-//     const time = (new Date()).toLocaleTimeString();
-
-//     server.sockets.json.send({ event: 'userSplit', name: ID, time });
-//   });
-// });
+app.post('/registration', (req, res) => {
+  console.log(req.body.user);
+  User.findOne({ where: { email: `${req.body.user.email}` } }).then((user) => {
+    if (user) {
+      res.send({
+        message: 'error',
+      });
+    } else {
+      User.create({
+        email: req.body.user.email,
+        name: req.body.user.name,
+        password: req.body.user.password,
+        picture: 'https://pp.userapi.com/c639219/v639219533/5bd44/aBlKArq3tMM.jpg',
+      });
+      console.log('пользователь создан');
+      res.send({
+        message: 'successful',
+      });
+    }
+  });
+});
