@@ -61,17 +61,22 @@ app.post('/auth', (req, res) => {
     src: req.body.data.imageUrl,
   };
 
-  const userForBd = {
-    email: req.body.data.email,
-    name: req.body.data.name,
-    picture: req.body.data.imageUrl,
-    password: 'none',
-  };
+  User.findOne({ where: { email: `${req.body.data.email}` } }).then((client) => {
+    if (!client) {
+      const userForBd = {
+        email: req.body.data.email,
+        name: req.body.data.name,
+        picture: req.body.data.imageUrl,
+        password: 'none',
+      };
 
-  console.log(userForBd);
-  console.log(user);
+      console.log(userForBd);
+      console.log(user);
 
-  User.create(userForBd);
+      User.create(userForBd);
+    }
+  });
+
   res.send(user);
 });
 
@@ -116,5 +121,11 @@ app.post('/registration', (req, res) => {
         message: 'successful',
       });
     }
+  });
+});
+
+app.post('/showUsers', (req, res) => {
+  User.findAll().then((users) => {
+    res.send(users);
   });
 });
