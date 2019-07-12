@@ -2,12 +2,11 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 
-
 const port = 4000;
-
 const app = express();
-app.use(cors());
 
+app.use(cors());
+app.use('/static', express.static(`${__dirname}/public`));
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
@@ -55,6 +54,7 @@ io.sockets.on('connection', (socket) => {
 });
 
 app.post('/auth', (req, res) => {
+
   const user = {
     name: req.body.data.name,
     src: req.body.data.imageUrl,
@@ -86,6 +86,7 @@ app.post('/searchUser', (req, res) => {
         res.send({
           name: user.name,
           src: user.picture,
+          email: user.email,
         });
       } else {
         res.send({
@@ -126,5 +127,25 @@ app.post('/registration', (req, res) => {
 app.post('/showUsers', (req, res) => {
   User.findAll().then((users) => {
     res.send(users);
+  });
+});
+
+app.post('/update', (req, res) => {
+  User.update(
+    {
+      picture: `${req.body.info.src}`,
+    },
+    {
+      where:
+        {
+          email: `${req.body.info.email}`,
+        },
+    },
+  ).then(() => {
+    res.send({
+      name: req.body.info.name,
+      src: req.body.info.src,
+      email: req.body.info.email,
+    });
   });
 });
